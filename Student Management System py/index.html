@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EduTrack</title>
+<style>
+body { font-family: Arial; margin: 0; display: flex; }
+.sidebar { width: 220px; background: #111; color: white; height: 100vh; padding: 20px; }
+.sidebar div { margin: 10px 0; cursor: pointer; }
+.main { padding: 20px; width: 100%; }
+.page { display: none; }
+.page.active { display: block; }
+table { width: 100%; border-collapse: collapse; }
+th, td { border: 1px solid #ccc; padding: 8px; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div onclick="show('dashboard')">Dashboard</div>
+    <div onclick="show('students')">Students</div>
+    <div onclick="show('grades')">Grades</div>
+    <div onclick="show('attendance')">Attendance</div>
+</div>
+
+<div class="main">
+<h2 id="title">Dashboard</h2>
+
+<div id="dashboard" class="page active">
+    <div id="stats"></div>
+</div>
+
+<div id="students" class="page">
+<table>
+<thead><tr><th>Name</th><th>ID</th><th>Class</th><th>Avg</th></tr></thead>
+<tbody id="studentsBody"></tbody>
+</table>
+</div>
+
+<div id="grades" class="page">
+<table>
+<thead><tr><th>Student</th><th>Subject</th><th>Score</th><th>Date</th></tr></thead>
+<tbody id="gradesBody"></tbody>
+</table>
+</div>
+
+<div id="attendance" class="page">
+<table>
+<thead><tr><th>Student</th><th>Date</th><th>Status</th><th>Subject</th></tr></thead>
+<tbody id="attendanceBody"></tbody>
+</table>
+</div>
+</div>
+
+<script>
+function show(page){
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById(page).classList.add("active");
+    document.getElementById("title").innerText = page.toUpperCase();
+    load(page);
+}
+
+async function api(url){
+    return (await fetch(url)).json();
+}
+
+async function load(page){
+    if(page==="dashboard"){
+        const d = await api("/api/dashboard");
+        document.getElementById("stats").innerHTML = `
+            <p>Total Students: ${d.total_students}</p>
+            <p>Average Score: ${d.avg_score}</p>
+            <p>Attendance Rate: ${d.attendance_rate}%</p>
+        `;
+    }
+
+    if(page==="students"){
+        const s = await api("/api/students");
+        document.getElementById("studentsBody").innerHTML = s.map(x=>`
+        <tr>
+            <td>${x.name}</td>
+            <td>${x.student_id}</td>
+            <td>${x.class}</td>
+            <td>${x.avg_score ? x.avg_score.toFixed(1) : "N/A"}</td>
+        </tr>`).join("");
+    }
+
+    if(page==="grades"){
+        const g = await api("/api/grades");
+        document.getElementById("gradesBody").innerHTML = g.map(x=>`
+        <tr>
+            <td>${x.student_name}</td>
+            <td>${x.subject}</td>
+            <td>${x.score}</td>
+            <td>${x.date}</td>
+        </tr>`).join("");
+    }
+
+    if(page==="attendance"){
+        const a = await api("/api/attendance");
+        document.getElementById("attendanceBody").innerHTML = a.map(x=>`
+        <tr>
+            <td>${x.student_name}</td>
+            <td>${x.date}</td>
+            <td>${x.status}</td>
+            <td>${x.subject}</td>
+        </tr>`).join("");
+    }
+}
+
+load("dashboard");
+</script>
+
+</body>
+</html>
